@@ -5,17 +5,20 @@ import {
   View,
   Text,
   ActivityIndicator,
+  useWindowDimensions,
 } from "react-native";
 import axios from "axios";
 import { Card, Button } from "react-native-elements";
 import { useState, useEffect } from "react";
 import { post, Posts } from "./types";
 import { openBrowserAsync } from "expo-web-browser";
+import RenderHtml from "react-native-render-html";
+import he from "he";
 
 export default function App() {
   const [index, setIndex] = useState(1);
   const [posts, setPosts] = useState([{} as post]);
-
+  const { width } = useWindowDimensions();
   const fetchPosts = () => {
     axios
       .get("https://www.reddit.com/r/appideas/new/.json?limit=100")
@@ -26,7 +29,7 @@ export default function App() {
           postsToRender.push({
             title: child.data.title,
             url: child.data.url,
-            text: child.data.selftext,
+            text: child.data.selftext_html,
           });
         });
         setPosts(postsToRender);
@@ -48,14 +51,15 @@ export default function App() {
               <Card containerStyle={styles.card}>
                 <Card.Title>{posts[index].title}</Card.Title>
                 <Card.Divider />
-                <Text style={styles.text}>{posts[index].text}</Text>
-                <View style={styles.buttonsContainer}>
-                  <Button
-                    containerStyle={styles.buttonContainerStyles}
-                    buttonStyle={styles.buttonStyle}
-                    titleStyle={styles.buttonTitleStyle}
-                    title={"Save"}
+                {posts[index].text ? (
+                  <RenderHtml
+                    contentWidth={width}
+                    source={{
+                      html: he.decode(posts[index].text),
+                    }}
                   />
+                ) : null}
+                <View style={styles.buttonsContainer}>
                   <Button
                     containerStyle={styles.buttonContainerStyles}
                     buttonStyle={styles.buttonStyle}
@@ -70,7 +74,6 @@ export default function App() {
               <View style={styles.buttonsContainer}>
                 <Button
                   containerStyle={styles.buttonContainerStyles}
-                  
                   titleStyle={styles.buttonTitleStyle}
                   title={"Back"}
                   onPress={() => {
@@ -81,7 +84,6 @@ export default function App() {
                 />
                 <Button
                   containerStyle={styles.buttonContainerStyles}
-                  
                   titleStyle={styles.buttonTitleStyle}
                   title={"Next"}
                   onPress={() => {
